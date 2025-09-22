@@ -1,0 +1,22 @@
+Sample Mathematical Notation Text
+Description:
+ This equation represents the famous Pythagorean theorem, which states the relationship between the sides of a right triangle.
+Text:
+ "The equation a2+b2=c2a^2 + b^2 = c^2a2+b2=c2 means that the square of side 'a' plus the square of side 'b' equals the square of the hypotenuse 'c'. Here, aaa, bbb, and ccc are the lengths of the triangle's sides. 🔺✨"
+Symbols and emojis included:
+a2a^2a2 (a squared)
+
+
++++ (plus sign)
+
+
+=== (equals sign)
+
+
+c2c^2c2 (c squared)
+
+
+Triangle emoji (🔺)
+
+
+Sparkles emoji (✨)

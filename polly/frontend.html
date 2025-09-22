@@ -1,0 +1,143 @@
+<!doctype html>
+<html lang="en">
+<head>
+	<meta charset="utf-8" />
+	<meta name="viewport" content="width=device-width, initial-scale=1" />
+	<title>Polly TTS – Web UI</title>
+	<script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
+	<script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+	<script crossorigin src="https://unpkg.com/htm@3.1.1/dist/htm.umd.js"></script>
+	<style>
+		body { margin:0; font-family: system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, Noto Sans, Arial; background:#0f172a; color:#e5e7eb}
+		.container { max-width: 980px; margin: 0 auto; padding: 24px 16px 48px; }
+		.card { background:#111827; border:1px solid #1f2937; border-radius:12px; padding:16px; margin-bottom:16px }
+		label { display:block; margin:8px 0 4px; color:#cbd5e1 }
+		input, select, textarea { width:100%; padding:10px; border-radius:8px; border:1px solid #334155; background:#0b1020; color:#e5e7eb }
+		button { background:#22d3ee; color:#0b1020; border:none; border-radius:10px; padding:10px 14px; font-weight:700; cursor:pointer }
+		.row { display:grid; grid-template-columns: repeat(12,1fr); gap:12px }
+		.col-6 { grid-column: span 12 }
+		@media(min-width:800px){ .col-6{ grid-column: span 6 } }
+		.small { color:#94a3b8; font-size:12px }
+	</style>
+</head>
+<body>
+	<div class="container">
+		<h1>Polly TTS – Web UI</h1>
+		<!-- <p class="small">Backend must be running at <code>http://localhost:8000</code> (FastAPI).</p> -->
+		<div id="root"></div>
+	</div>
+
+	<script>
+		const html = htm.bind(React.createElement);
+		const API_BASE = window.location.origin; // use current host/port
+
+		function App(){
+			const [voices, setVoices] = React.useState([]);
+			const [text, setText] = React.useState("");
+			const [file, setFile] = React.useState(null);
+			const [voice, setVoice] = React.useState("");
+			const [gender, setGender] = React.useState("");
+			const [accent, setAccent] = React.useState("en-US");
+			const [engine, setEngine] = React.useState("");
+			const [format, setFormat] = React.useState("mp3");
+			const [style, setStyle] = React.useState("");
+			const [sampleRate, setSampleRate] = React.useState("16000");
+			const [loading, setLoading] = React.useState(false);
+
+			React.useEffect(()=>{ fetchVoices(accent); }, []);
+
+			async function fetchVoices(lang){
+				try{
+					const res = await fetch(`${API_BASE}/voices?language_code=${encodeURIComponent(lang||"")}`);
+					const data = await res.json();
+					setVoices(data);
+				}catch(e){ console.error(e); }
+			}
+
+			async function synthesize(){
+				setLoading(true);
+				try{
+					const fd = new FormData();
+					if (text) fd.append('text', text);
+					if (file) fd.append('file', file);
+					if (voice) fd.append('voice', voice);
+					if (gender) fd.append('gender', gender);
+					if (accent) fd.append('accent', accent);
+					if (engine) fd.append('engine', engine);
+					if (style) fd.append('style', style);
+					if (sampleRate) fd.append('sample_rate', sampleRate);
+					fd.append('format', format);
+
+					const res = await fetch(`${API_BASE}/synthesize`, { method:'POST', body: fd });
+					if (!res.ok) { const err = await res.json().catch(()=>({})); throw new Error(err.error || `HTTP ${res.status}`); }
+					const blob = await res.blob();
+					const url = URL.createObjectURL(blob);
+					const a = document.createElement('a');
+					a.href = url; a.download = `polly_output.${format}`; a.click();
+					URL.revokeObjectURL(url);
+				}catch(e){ alert(e.message); }
+				finally{ setLoading(false); }
+			}
+
+			return html`
+				<div className="card">
+					<label>Text</label>
+					<textarea rows="6" value=${text} onChange=${e=>setText(e.target.value)} placeholder="Type text here..." />
+					<label>Or upload file (.txt or .pdf)</label>
+					<input type="file" accept=".txt,.pdf" onChange=${e=>setFile(e.target.files[0])} />
+				</div>
+				<div className="row">
+					<div className="card col-6">
+						<label>Accent (language code)</label>
+						<input value=${accent} onChange=${e=>{ setAccent(e.target.value); fetchVoices(e.target.value); }} />
+						<div class="small" style="margin-top:6px">
+							Quick set:
+							<button type="button" style="margin-left:6px" onClick=${()=>{ setAccent('pt-PT'); fetchVoices('pt-PT'); }}>pt-PT (Portuguese - Portugal)</button>
+							<button type="button" style="margin-left:6px" onClick=${()=>{ setAccent('pt-BR'); fetchVoices('pt-BR'); }}>pt-BR (Portuguese - Brazil)</button>
+						</div>
+						<label>Voice</label>
+						<select value=${voice} onChange=${e=>setVoice(e.target.value)}>
+							<option value="">Auto (by gender/accent)</option>
+							${voices.map(v=> html`<option value=${v.id}>${v.id} (${v.gender}) ${v.language_code} [${(v.engines||[]).join('/')}]</option>`)}
+						</select>
+						<label>Gender</label>
+						<select value=${gender} onChange=${e=>setGender(e.target.value)}>
+							<option value="">Any</option>
+							<option value="male">Male</option>
+							<option value="female">Female</option>
+						</select>
+					</div>
+					<div className="card col-6">
+						<label>Engine</label>
+						<select value=${engine} onChange=${e=>setEngine(e.target.value)}>
+							<option value="">Auto</option>
+							<option value="standard">standard</option>
+							<option value="neural">neural</option>
+						</select>
+						<label>Style (disabled - not supported)</label>
+						<select value="" disabled>
+							<option value="">Styles not available</option>
+						</select>
+						<label>Format</label>
+						<select value=${format} onChange=${e=>setFormat(e.target.value)}>
+							<option>mp3</option>
+							<option>wav</option>
+							<option>ogg_vorbis</option>
+							<option>pcm</option>
+						</select>
+						<label>Sample rate</label>
+						<input value=${sampleRate} onChange=${e=>setSampleRate(e.target.value)} />
+					</div>
+				</div>
+				<div className="card">
+					<button onClick=${synthesize} disabled=${loading}>${loading ? 'Converting…' : 'Convert'}</button>
+				</div>
+			`;
+		}
+
+		ReactDOM.createRoot(document.getElementById('root')).render(html`<${App} />`);
+	</script>
+</body>
+</html>
+
+

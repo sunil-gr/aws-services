@@ -1,0 +1,147 @@
+<!doctype html>
+<html lang="en">
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<title>Polly TTS App – User Guide</title>
+	<style>
+		:root {
+			--bg: #0f172a;
+			--panel: #111827;
+			--muted: #94a3b8;
+			--text: #e5e7eb;
+			--accent: #22d3ee;
+			--accent-2: #8b5cf6;
+		}
+		html,body { margin:0; padding:0; background: var(--bg); color: var(--text); font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, Noto Sans, Arial, "Apple Color Emoji", "Segoe UI Emoji"; }
+		a { color: var(--accent); text-decoration: none; }
+		h1,h2,h3 { line-height: 1.2; margin: 0 0 .25rem; }
+		code, pre { background: #0b1020; color: #d1d5db; border: 1px solid #1f2937; border-radius: 8px; }
+		pre { padding: 12px; overflow:auto; }
+		.container { max-width: 980px; margin: 0 auto; padding: 24px 16px 64px; }
+		.header { background: linear-gradient(135deg, rgba(34,211,238,.18), rgba(139,92,246,.18)); border-bottom: 1px solid #1f2937; }
+		.header-inner { max-width: 980px; margin: 0 auto; padding: 28px 16px; }
+		.kbd { padding: 2px 6px; border: 1px solid #334155; border-bottom-width: 3px; border-radius: 6px; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; font-size: 12px; background: #0b1020; color: #cbd5e1; }
+		.badge { display:inline-block; padding: 4px 8px; border-radius: 999px; font-size: 12px; color: #0b1020; background: linear-gradient(135deg, var(--accent), var(--accent-2)); font-weight: 700; }
+		.grid { display: grid; grid-template-columns: repeat(12, 1fr); gap: 16px; }
+		.card { grid-column: span 12; background: var(--panel); border: 1px solid #1f2937; border-radius: 12px; padding: 16px; }
+		.card h3 { margin-top: 6px; }
+		@media (min-width: 800px) {
+			.card.span-6 { grid-column: span 6; }
+		}
+		.table { width: 100%; border-collapse: collapse; margin-top: 8px; }
+		.table th, .table td { border-bottom: 1px solid #1f2937; padding: 8px; text-align: left; color: #d1d5db; }
+		.footer { color: var(--muted); font-size: 12px; text-align:center; margin-top: 32px; }
+	</style>
+</head>
+<body>
+	<div class="header">
+		<div class="header-inner">
+			<div class="badge">AWS Polly TTS</div>
+			<h1>Polly Text‑to‑Speech – User Guide</h1>
+			<p style="color:#cbd5e1; max-width: 740px;">This app integrates Amazon Polly to convert text into natural‑sounding speech. Use the CLI to synthesize from plain text, text files, or PDFs, with options for voice, gender, accent, speaking style, audio format, and sample rate.</p>
+		</div>
+	</div>
+
+	<div class="container">
+		<div class="grid">
+			<div class="card span-6">
+				<h2>Overview</h2>
+				<p><strong>The application</strong> provides a reusable Python wrapper (`PollyTTS`) and a command‑line interface to synthesize speech via <strong>Amazon Polly</strong>. It supports long text chunking, environment‑based credentials, WAV/MP3/OGG/PCM output, and optional PDF text extraction.</p>
+			</div>
+			<div class="card span-6">
+				<h2>About Amazon Polly</h2>
+				<p>Amazon Polly is a cloud service that converts text into lifelike speech. It offers many languages and voices, including Neural TTS for improved naturalness, and supports SSML features such as prosody, emphasis, and domain styles (e.g., newscaster).</p>
+			</div>
+
+			<div class="card">
+				<h2>Features</h2>
+				<ul>
+					<li><strong>Multiple inputs</strong>: inline text, <span class="kbd">--input-file</span> for .txt or .pdf</li>
+					<li><strong>Voice selection</strong>: explicit <span class="kbd">--voice</span> or auto by <span class="kbd">--gender</span> and <span class="kbd">--accent</span></li>
+					<li><strong>Speaking styles</strong>: <span class="kbd">--style</span> conversational, newscaster, narration (Neural voices)</li>
+					<li><strong>Audio formats</strong>: mp3, ogg_vorbis, pcm, wav (WAV written with proper headers)</li>
+					<li><strong>Sample rate</strong>: <span class="kbd">--sample-rate</span> (e.g., 16000, 22050)</li>
+					<li><strong>Chunking</strong>: Safely splits long text to fit Polly limits</li>
+					<li><strong>Env credentials</strong>: uses AWS default chain; optional .env loading</li>
+					<li><strong>List voices</strong>: <span class="kbd">--list-voices</span> with gender/engine visibility</li>
+				</ul>
+			</div>
+
+			<div class="card span-6">
+				<h3>Support Matrix (Key)</h3>
+				<table class="table">
+					<tr><th>Capability</th><th>Notes</th></tr>
+					<tr><td>Engines</td><td>standard, neural (voice dependent)</td></tr>
+					<tr><td>Formats</td><td>mp3, ogg_vorbis, pcm, wav</td></tr>
+					<tr><td>Voices</td><td>Male/Female across many locales</td></tr>
+					<tr><td>Styles</td><td>conversational, newscaster, narration (Neural)</td></tr>
+					<tr><td>Languages/Accents</td><td>e.g., en-US, en-GB, en-AU, en-IN, and more</td></tr>
+					<tr><td>Input</td><td>Text, .txt files, PDF (via extraction)</td></tr>
+				</table>
+			</div>
+			<div class="card span-6">
+				<h3>Requirements</h3>
+				<ul>
+					<li>Python 3.9+</li>
+					<li>AWS credentials with <code>polly:SynthesizeSpeech</code> and <code>polly:DescribeVoices</code></li>
+					<li>Packages: <code>boto3</code>, <code>python-dotenv</code> (optional), <code>PyPDF2</code> (for PDFs)</li>
+				</ul>
+			</div>
+
+			<div class="card">
+				<h2>Quick Start</h2>
+				<pre><code class="language-powershell"># 1) Create and activate venv (Windows PowerShell)
+cd D:\xampp\htdocs\hm\polly
+py -3 -m venv .venv
+.\.venv\Scripts\Activate.ps1
+
+# 2) Install requirements
+pip install -r requirements.txt
+
+# 3) Verify AWS identity and permissions
+aws sts get-caller-identity
+
+# 4) Synthesize basic MP3
+python polly.py --text "Hello from Polly" --output out.mp3
+
+# 5) For maximum compatibility, generate WAV
+python polly.py --text "Hello" --format wav --sample-rate 16000 --output out.wav
+</code></pre>
+			</div>
+
+			<div class="card">
+				<h2>Usage Examples</h2>
+				<h3>List Voices (by accent)</h3>
+				<pre><code class="language-powershell">python polly.py --list-voices --accent en-US</code></pre>
+				<h3>Pick by Gender and Accent</h3>
+				<pre><code class="language-powershell">python polly.py --text "Welcome" --gender male --accent en-GB --engine neural --output uk_male.mp3</code></pre>
+				<h3>Explicit Voice with Style</h3>
+				<pre><code class="language-powershell">python polly.py --text "Breaking news now" --voice Matthew --style newscaster --engine neural --output news.mp3</code></pre>
+				<h3>From Text File</h3>
+				<pre><code class="language-powershell">python polly.py --input-file input.txt --voice Joanna --output readout.mp3</code></pre>
+				<h3>From PDF (extraction)</h3>
+				<pre><code class="language-powershell">python polly.py --input-file dts.pdf --format wav --sample-rate 16000 --engine neural --output dts.wav</code></pre>
+			</div>
+
+			<div class="card">
+				<h2>Troubleshooting</h2>
+				<ul>
+					<li><strong>AccessDeniedException</strong>: Attach a policy allowing <code>polly:SynthesizeSpeech</code> and <code>polly:DescribeVoices</code> to your user/role.</li>
+					<li><strong>Engine not supported</strong>: Some voices only support <em>neural</em> or <em>standard</em>. Switch with <span class="kbd">--engine</span>.</li>
+					<li><strong>Playback issues</strong>: Use <span class="kbd">--format wav</span> (16 kHz) for broadest compatibility.</li>
+					<li><strong>Empty audio</strong>: Ensure extracted text from PDFs is not empty; some PDFs are scanned images (need OCR).</li>
+				</ul>
+			</div>
+		</div>
+
+		<div class="footer">© <span id="y"></span> Polly TTS App • Built with Amazon Polly</div>
+	</div>
+
+	<script>
+		document.getElementById('y').textContent = new Date().getFullYear();
+	</script>
+</body>
+</html>
+
+
