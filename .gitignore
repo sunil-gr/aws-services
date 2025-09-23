@@ -1,2 +1,8 @@
 polly/.env
 polly/.venv
+
+backend/.env
+backend/.venv
+backend/__pycache__
+
+frontend/node_modules
